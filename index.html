@@ -1,0 +1,627 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #score-counter {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px;
+            background-color: #333;
+            border-bottom-right-radius: 10px;
+            color: white;
+            z-index: 999;
+        }
+
+        #quiz-container {
+            max-width: 600px;
+            margin: auto;
+            padding: 60px 20px 20px; /* تم تعديل ال padding ليضمن عدم تغطية الصورة */
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            position: relative; /* تمت إضافة position: relative; للسماح لـ #score-counter بالتحكم فيه */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: white;
+            background-color: #2196F3;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0c0c0c;
+        }
+
+        #timer {
+            margin-bottom: 10px;
+        }
+
+        #result-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-text {
+            margin-bottom: 10px;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: red;
+            color: white;
+        }
+
+        /* CSS for displaying images to fit the screen */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="score-counter">Score: <span id="score">0</span></div>
+
+    <div id="quiz-container">
+        <img id="question-image" src="" alt="Question Image">
+        <div id="choices"></div>
+        <button onclick="checkAnswer()">Submit Answer</button>
+        <p id="timer"></p>
+    </div>
+
+    <div id="result-container">
+        <h2>Quiz Result</h2>
+        <p class="result-text" id="result"></p>
+        <div id="correct-answers"></div>
+        <button id="retryBtn" style="display: none;" onclick="retryQuiz()">Retry Quiz</button>
+    </div>
+
+    <script>
+        var currentQuestion = 0;
+        var score = 0;
+        var timeLeft = 1800; // تحديد عدد الثواني
+        var timerInterval;
+
+        var quizData = [
+
+      
+        
+        {
+    "question": "ما هو أهم حقل نفط في المملكة العربية السعودية ",
+    "choices": ["حقل الغوار", "حقل السفانية", "حقل القطيف", "حقل أبو حدرية"],
+    "correctAnswer": "حقل السفانية"
+},
+{
+    "question": "ما الذي يحد الصحراء الكبرى من جهة الغرب ",
+    "choices": ["البحر المتوسط", "جبال الأطلس", "نهر النيل", "المحيط الأطلسي"],
+    "correctAnswer": "المحيط الأطلسي"
+},
+{
+    "question": "ما هو الاسم الذي أطلق على أول قناة مائية تربط بين البحر المتوسط والبحر الأحمر في مصر",
+    "choices": ["قناة السويس", "قناة بنى سويف", "قناة توشكى", "قناة سيزوستريس"],
+    "correctAnswer": "قناة سيزوستريس"
+},
+{
+    "question": "في أي عام تم توقيع معاهدة السودان بين مصر وبريطانيا ",
+    "choices": ["1898", "1899", "1900", "1901"],
+    "correctAnswer": "1899"
+},
+{
+    "question": "ما هو تأثير تيار الخليج الدافئ على مناخ أوروبا ",
+    "choices": ["يجعل مناخ أوروبا أكثر دفئًا ورطوبة.", "يجعل مناخ أوروبا أكثر برودة وجفافًا."],
+    "correctAnswer": "يجعل مناخ أوروبا أكثر دفئًا ورطوبة."
+},
+  
+          {
+    "question": "الطاقة البخارية في شرق آسيا",
+    "choices": ["صحيح", "خاطئ"],
+     "correctAnswer": "صحيح"
+},
+          {
+    "question": "عمر بن الخطاب هو من أشار على أبي بكر الصديق بجمع القرآن الكريم",
+    "choices": ["صح", "خطأ"],
+    "correctAnswer": "صح"
+},
+                    {
+    "question": "أمر أبو بكر الصديق بجمع القرآن الكريم  واختار زيد بن ثابت لهذه المهمة الشاقة",
+    "choices": ["صح", "خطأ"],
+    "correctAnswer": "صح"
+},
+                    {
+    "question": "يسود جنوب إفريقيا مناخ معتدل بصفة عامة",
+    "choices": ["صح", "خطأ"],
+    "correctAnswer": "صح"
+},
+                    {
+    "question": "أطول حد بري في مصر هو حدود مصر مع السودان",
+    "choices": ["صح", "خطأ"],
+    "correctAnswer": "صح"
+},
+          
+
+{
+    question: "اكثر دوله تستهلك طاقه في العالم",
+    choices: ["أمريكا", "الصين", "روسيا"],
+    correctAnswer: "الصين"
+},
+        
+            
+{
+    "question": "ما هي أعلى قمة في جبال الألب ",
+    "choices": ["مونت بلانك", "جبل ماترهورن", "جبل إلفين", "جبل مونتي روزا"],
+     "correctAnswer": "مونت بلانك"
+},
+{
+    "question": "كيف كانت ملكية الأراضي في عهد محمد سعيد باشا",
+    "choices": ["كانت ملكية الأراضي خاصة بالدولة فقط.", "كانت ملكية الأراضي خاصة بالفلاحين فقط.", "كانت ملكية الأراضي مشتركة بين الدولة والفلاحين.", "كانت ملكية الأراضي حرة لأي شخص."],
+     "correctAnswer": "كانت ملكية الأراضي مشتركة بين الدولة والفلاحين."
+},
+{
+    "question": "من هو الخليفة الذي بنى المسجد الأموي في دمشق",
+    "choices": ["عمر بن عبد العزيز.", "معاوية بن أبي سفيان.", "عبد الملك بن مروان.", "الوليد بن عبد الملك."],
+     "correctAnswer": "الوليد بن عبد الملك."
+},
+{
+    "question": "ما هو تعريف الإقليم المناخي",
+    "choices": [
+        "منطقة واسعة ذات خصائص مناخية ونباتية متشابهة.",
+        "منطقة محددة جغرافياً وفلكياً، لها خصائص مناخية ونباتية تميزها عن غيرها من المناطق.",
+        "منطقة ذات تضاريس متنوعة.",
+        "منطقة ذات كثافة سكانية عالية."
+    ],
+     "correctAnswer": "منطقة محددة جغرافياً وفلكياً، لها خصائص مناخية ونباتية تميزها عن غيرها من المناطق."
+},
+{
+    "question": "ما هما القسمان الرئيسيان للجغرافيا",
+    "choices": [
+        "طبيعية وبشرية.",
+        "سياسية واقتصادية.",
+        "تاريخية وثقافية.",
+        "رياضية واجتماعية."
+    ],
+     "correctAnswer": "طبيعية وبشرية."
+},
+{
+    "question": "أين يتركز السكان في النيجر",
+    "choices": ["أقصى شمال وشرق الدولة.", "أقصى جنوب وشرق الدولة.", "أقصى شمال وغرب الدولة.", "أقصى جنوب وغرب الدولة."],
+     "correctAnswer": "أقصى جنوب وغرب الدولة."
+},
+{
+    "question": "ما هي نسبة الاحتياطيات النفطية المؤكدة في الوطن العربي من احتياطيات العالم",
+    "choices": ["20%.", "39%.", "50%.", "60%."],
+     "correctAnswer": "39%."
+},
+{
+  "question": "ما هو أصل الإخشيديين",
+  "choices": ["تركي", "عربي", "فارسي", "روماني"],
+  "correctAnswer": "تركي"
+},
+{
+  "question": "من كان الخديوي الذي افتتح قناة السويس وأبحرت أول سفينة في عهده",
+  "choices": ["الخديوي محمد علي", "الخديوي إسماعيل", "الخديوي توفيق", "الخديوي عباس حلمي الثاني"],
+  "correctAnswer": "الخديوي إسماعيل"
+},
+{
+  "question": "ما هو اسم حقل الغاز الذي تم اكتشافه مؤخرًا في شمال الدلتا",
+  "choices": ["حقل ظهر", "حقل غزالة", "حقل نورس", "حقل أتالانت"],
+  "correctAnswer": "حقل نورس"
+},
+{
+  "question": "ما هو أحد الأودية الجافة في المملكة العربية السعودية",
+  "choices": [
+    "وادي حنيفة.",
+    "وادي الرمة.",
+    "وادي الدواسر.",
+    "وادي نجران."
+  ],
+  "correctAnswer": "وادي الدواسر."
+},
+{
+  "question": "ما هو أطول وديان المملكة العربية السعودية",
+  "choices": [
+    "وادي الدواسر.",
+    "وادي حنيفة.",
+    "وادي نجران.",
+    "وادي الرمة."
+  ],
+  "correctAnswer": "وادي الرمة."
+},
+{
+  "question": "من هو قائد معركة القادسية",
+  "choices": [
+    "خالد بن الوليد",
+    "عمرو بن العاص",
+    "سعد بن أبي وقاص",
+    "أبو بكر الصديق"
+  ],
+  "correctAnswer": "سعد بن أبي وقاص"
+},
+{
+  "question": "ما هو السبب الرئيسي لمعركة تبوك",
+  "choices": [
+    "هجوم الروم على المدينة المنورة.",
+    "حشد الروم لقواتها على حدود الشام.",
+    "دعوة بعض القبائل العربية للروم لغزو المدينة المنورة.",
+    "جميع الخيارات أعلاه."
+  ],
+  "correctAnswer": "جميع الخيارات أعلاه."
+},
+{
+    "question": "في أي منطقة من المملكة العربية السعودية تقع هضبة شمر",
+    "choices": [
+        "شمال غرب",
+        "شمال شرق",
+        "جنوب غرب",
+        "جنوب شرق"
+    ],
+    "correctAnswer": "شمال غرب"
+},
+{
+     "question": "أين يتمركز معظم سكان النيجر",
+     "choices": [
+        "شمال غرب البلاد",
+        "جنوب شرق البلاد",
+        "جنوب غرب البلاد",
+        "شمال شرق البلاد"
+    ],
+     "correctAnswer": "جنوب غرب البلاد"
+},
+{
+     "question": "ما هو النوع الرئيسي من الغطاء النباتي في المناطق الاستوائية",
+     "choices": [
+        "حشائش السافانا",
+        "الغابات",
+        "الاستبس",
+        "كل مما سبق"
+    ],
+     "correctAnswer": "الغابات"
+},
+{
+    "question": "ما هي المنطقة التي تتميز بوجود أمطار طوال العام وحرارة طوال العام",
+     "choices": [
+        "المناطق القطبية",
+        "المناطق المعتدلة",
+        "المناطق الصحراوية",
+        "المناطق الاستوائية"
+    ],
+     "correctAnswer": "المناطق الاستوائية"
+},{
+    "question": "ما هي أماكن الزراعة في صحراء الربع الخالي",
+    "choices": [
+        "محمية الربع الخالي فقط",
+        "منطقة الشيبة فقط",
+        "محمية الربع الخالي ومنطقة الشيبة فقط",
+        "محمية الربع الخالي ومنطقة الشيبة ومنطقة حرض"
+    ],
+    "correctAnswer": "محمية الربع الخالي ومنطقة الشيبة ومنطقة حرض"
+},
+{
+    "question": "من كان أول رئيس للجمهورية المصرية في عام 1953",
+    "choices": ["جمال عبد الناصر", "محمد نجيب", "أنور السادات"],
+    "correctAnswer": "محمد نجيب"
+},
+{
+  "question": "مصر بتقوم بحساب التعداد السكاني كل كام سنة",
+  "choices": [
+    "5 سنوات",
+    "10 سنوات",
+    "15 سنة"
+  ],
+  "correctAnswer": "10 سنوات"
+},
+{
+     "question": "من هي الدولة التي رفضت قرار تقسيم فلسطين عام 1947",
+     "choices": [
+        "الولايات المتحدة الأمريكية",
+        "بريطانيا",
+        "الاتحاد السوفيتي",
+        "فرنسا"
+    ],
+     "correctAnswer": "بريطانيا"
+},
+{
+     "question": "في أي مرحلة من مراحل عمر النهر تكون الشلالات",
+     "choices": [
+        "الطفولة",
+        "الشباب",
+        "النضج",
+        "الشيخوخة"
+    ],
+     "correctAnswer": "الشباب"
+},
+{
+    "question": "أي من المدن التالية لا تقع في وسط السودان",
+     "choices": [
+        "بورتسودان",
+        "ربك",
+        "سنار",
+        "شندي",
+        "سواكن",
+        "طابت",
+        "ود مدني",
+        "وادي حلفا"
+    ],
+     "correctAnswer": "بورتسودان"
+},
+{
+    "question": "ما هي الرياح التي تهب على البحرين",
+     "choices": [
+        "رياح الخماسين",
+        "رياح الشمال",
+        "رياح الكوس",
+        "رياح البارح الشمالية"
+    ],
+     "correctAnswer": "رياح البارح الشمالية"
+},
+
+
+
+
+{
+    "question": "في أي عام انفصلت الكويت عن بريطاني",
+    "choices": ["1900", "1913", "1922", "1931"],
+     "correctAnswer": "1913"
+},
+{
+     "question": "ما هو السبب الرئيسي لتدهور طبقة التجار في عهد محمد علي",
+    "choices": ["الحروب التي خاضها محمد علي", "الاضطرابات السياسية في مصر", "سيطرة محمد علي على التجارة الخارجية والداخلية", "قلة الموارد الطبيعية في مصر"],
+     "correctAnswer": "سيطرة محمد علي على التجارة الخارجية والداخلية"
+},
+{
+     "question": "ما هو المضيق الذي يفصل بين شبه جزيرة ماليزيا وجزيرة سومطرة",
+    "choices": ["مضيق باب المندب", "مضيق ملقا", "مضيق هرمز", "مضيق جبل طارق"],
+     "correctAnswer": "مضيق ملقا"
+},
+{
+     "question": "ما هو أوجه التشابه بين إدارة محمد علي وإدارة الخديوي إسماعيل",
+    "choices": ["التركيز على الزراعة فقط.", "التركيز على التصنيع فقط.", "التركيز على التعليم والصحة فقط.", "التركيز على التحديث والتنمية في مختلف المجالات."],
+     "correctAnswer": "التركيز على التحديث والتنمية في مختلف المجالات."
+},
+{
+     "question": "ما هي الأشجار المخروطية من بين الخيارات التالية",
+     "choices": [
+        "شجرة الكازوارينا - شجرة السرو - شجرة العرعر - شجرة الصنوبر - شجرة الأثل العربي",
+        "شجرة النخيل - شجرة الجاكارندا - شجرة الزيتون - شجرة التوت - شجرة المانجو",
+        "شجرة الكرز - شجرة البلوط - شجرة البتولا - شجرة الصفصاف - شجرة الدردار",
+        "شجرة الأكاسيا - شجرة الموز - شجرة البرتقال - شجرة الليمون - شجرة الرمان"
+    ],
+    "correctAnswer": "شجرة الكازوارينا - شجرة السرو - شجرة العرعر - شجرة الصنوبر - شجرة الأثل العربي"
+},
+{
+    "question": "ما هي مرتفعات الوطن العربي التي تتميز بمناخ معتدل",
+    "choices": [
+        "مرتفعات جبال الألب",
+        "مرتفعات جبال الهيمالايا",
+        "مرتفعات جبال الأنديز",
+        "مرتفعات جبال الأطلس"
+    ],
+    "correctAnswer": "مرتفعات جبال الأطلس"
+},
+{
+    "question": "من هو أول من أسس أسطولاً بحريًا إسلاميًا",
+    "choices": [
+        "عمر بن الخطاب",
+        "عثمان بن عفان",
+        "معاوية بن أبي سفيان",
+        "علي بن أبي طالب"
+    ],
+    "correctAnswer": "عثمان بن عفان"
+},
+{
+    "question": "في أي سنة تم توقيع معاهدة السودان بين مصر وبريطانيا",
+    "choices": ["1898", "1899", "1900", "1901"],
+    "correctAnswer": "1899"
+},
+{
+    "question": "من هو الشخص الذي بدأ صناعة الشاي في سريلانكا",
+    "choices": ["الملك سيدهو", "جيمس تايلور", "توماس ليبتون", "ويليام هانسون"],
+    "correctAnswer": "جيمس تايلور"
+},
+{
+    "question": "ما هو الارتفاع الذي يمكن أن يصل إليه الإنسان على جبل إيفرست دون استخدام الأكسجين الإضافي",
+    "choices": ["5000 متر", "6000 متر", "7000 متر", "8000 متر"],
+    "correctAnswer": "7000 متر"
+},
+{
+    "question": "ما هي أكبر جزيرة في أفريقيا",
+    "choices": ["جزيرة جربة", "جزيرة زنجبار", "جزيرة أوكيريوي", "جزيرة مدغشقر"],
+    "correctAnswer": "جزيرة مدغشقر"
+},
+{
+    "question": "ما هو التيار الذي يُعدّ من أهم العوامل المؤثرة على مناخ أوروبا؟",
+    "choices": ["تيار الكناري", "تيار الكوروشيو", "تيار الخليج الدافئ", "تيار لابرادور"],
+    "correctAnswer": "تيار الخليج الدافئ"
+},
+{
+    "question": "في أي قارة تقع جزر القمر",
+    "choices": ["آسيا", "أفريقيا", "أوروبا", "أمريكا الشمالية"],
+    "correctAnswer": "أفريقيا"
+},
+{
+    "question": "أي من الدول الأفريقية التالية يمر فيها مدار السرطان",
+    "choices": ["جمهورية مصر العربية، ليبيا، الجزائر، المغرب وموريتانيا", "جمهورية مصر العربية، ليبيا، الجزائر، المغرب فقط", "جمهورية مصر العربية، ليبيا، الجزائر فقط", "جمهورية مصر العربية فقط"],
+    "correctAnswer": "جمهورية مصر العربية، ليبيا، الجزائر، المغرب وموريتانيا"
+},
+{
+    "question": "كم سنة استمرت مدة الدعوة السرية في بداية انتشار الإسلام",
+    "choices": ["3", "5", "7", "10"],
+    "correctAnswer": "3"
+},
+
+        ];
+
+        // قم بترتيب الأسئلة بشكل عشوائي
+        shuffleArray(quizData);
+
+        function shuffleArray(array) {
+            for (var i = array.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+            }
+            return array;
+        }
+
+        function loadQuestion() {
+            var currentQuiz = quizData[currentQuestion];
+
+            var questionImageElement = document.getElementById('question-image');
+            var choicesElement = document.getElementById('choices');
+
+            if (currentQuiz.imageSrc) {
+                questionImageElement.src = currentQuiz.imageSrc; // تعيين مصدر الصورة
+                questionImageElement.style.display = 'block'; // عرض الصورة
+            } else {
+                questionImageElement.style.display = 'none'; // إخفاء الصورة إذا لم تكن متاحة
+            }
+
+            choicesElement.innerHTML = '';
+
+            // عرض السؤال كنص عادي إذا لم يكن هناك صورة
+            if (!currentQuiz.imageSrc) {
+                choicesElement.innerHTML += '<p>' + currentQuiz.question + '</p>';
+            }
+
+            for (var i = 0; i < currentQuiz.choices.length; i++) {
+                var choice = currentQuiz.choices[i];
+                choicesElement.innerHTML += '<label><input type="radio" name="choice" value="' + choice + '"> ' + choice + '</label>';
+            }
+
+            startTimer(); // بدء الموقت عند تحميل كل سؤال
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(function () {
+                document.getElementById('timer').innerHTML = 'Time Left: ' + timeLeft + 's';
+
+                if (timeLeft === 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up!'); // عرض رسالة انتهاء الوقت
+                    showResult(); // عرض النتيجة النهائية عند انتهاء الوقت
+                } else {
+                    timeLeft--;
+                }
+            }, 1000);
+        }
+
+        function checkAnswer() {
+            var selectedOption = document.querySelector('input[name="choice"]:checked');
+            if (!selectedOption) {
+                alert('Please select an answer.');
+                return;
+            }
+
+            var userAnswer = selectedOption.value;
+            var currentQuiz = quizData[currentQuestion];
+
+            var choicesLabels = document.querySelectorAll('label');
+
+            for (var i = 0; i < choicesLabels.length; i++) {
+                if (currentQuiz.correctAnswer === currentQuiz.choices[i]) {
+                    choicesLabels[i].classList.add('correct');
+                } else {
+                    choicesLabels[i].classList.add('incorrect');
+                }
+            }
+
+            if (userAnswer === currentQuiz.correctAnswer) {
+                score++;
+                document.getElementById('score').textContent = score;
+            }
+
+            clearInterval(timerInterval); // قبل التحقق من الإجابة، قم بإيقاف الموقت
+
+            currentQuestion++;
+
+            if (currentQuestion < quizData.length) {
+                setTimeout(function () {
+                    loadQuestion();
+                    resetColors();
+                }, 3000);
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            var resultElement = document.getElementById('result');
+            var correctAnswersElement = document.getElementById('correct-answers');
+
+            resultElement.innerHTML = 'Your Score: ' + score + ' out of ' + quizData.length;
+
+            correctAnswersElement.innerHTML = '<h3>Correct Answers:</h3>';
+            for (var i = 0; i < quizData.length; i++) {
+                var q = quizData[i];
+                var imgSrc = q.imageSrc;
+                var imgElement = '<img src="' + imgSrc + '" alt="Question Image">';
+                correctAnswersElement.innerHTML += imgElement + '<strong>Q: ' + q.question + '</strong><br>A: ' + q.correctAnswer + '<br>';
+            }
+
+            document.getElementById('result-container').style.display = 'block';
+            document.getElementById('retryBtn').style.display = 'block';
+        }
+
+        function resetColors() {
+            var choicesLabels = document.querySelectorAll('label');
+            for (var i = 0; i < choicesLabels.length; i++) {
+                choicesLabels[i].classList.remove('correct', 'incorrect'); // إزالة الأنماط المضافة سابقًا
+            }
+        }
+
+        function retryQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            timeLeft = 1800; // إعادة تعيين الوقت للقيمة الأصلية
+
+            // قم بترتيب الأسئلة بشكل عشوائي عند إعادة المحاولة
+            shuffleArray(quizData);
+
+            document.getElementById('score').textContent = score; // تحديث قيمة العداد إلى الصفر
+            loadQuestion();
+            resetColors();
+
+            document.getElementById('result-container').style.display = 'none';
+            document.getElementById('retryBtn').style.display = 'none';
+        }
+
+        loadQuestion();
+    </script>
+
+</body>
+
+</html>
